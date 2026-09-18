@@ -12,6 +12,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copiez les fichiers de l'application dans le conteneur
 COPY . /var/www/html/
 
+# Créer les dossiers nécessaires à Laravel
+RUN mkdir -p /var/www/html/bootstrap/cache \
+    /var/www/html/storage/framework/cache \
+    /var/www/html/storage/framework/sessions \
+    /var/www/html/storage/framework/views
+
+# Donner les permissions
+RUN chown -R www-data:www-data \
+    /var/www/html/bootstrap \
+    /var/www/html/storage
+
 # Installez les dépendances de l'application
 RUN composer install
 
