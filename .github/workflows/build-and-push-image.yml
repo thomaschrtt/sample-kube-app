@@ -70,7 +70,7 @@ jobs:
       - name: Checkout GitOps repository
         uses: actions/checkout@v4
         with:
-          repository: thomaschrtt/sample-kube-app-gitops
+          repository: thomaschrtt/sample-kube-app
           token: ${{ secrets.GITOPS_TOKEN }}
           path: gitops
 
