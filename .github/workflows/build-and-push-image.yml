@@ -27,6 +27,10 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: build-and-push-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -55,6 +59,8 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/thomaschrtt/sample-kube-app:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # Récupérer le repository GitOps
       - name: Checkout GitOps repository
@@ -66,19 +72,53 @@ jobs:
 
       # Mettre à jour l'image dans Kubernetes
       - name: Update Kubernetes image
+        working-directory: gitops
         run: |
-          sed -i -E "s|(ghcr.io/thomaschrtt/sample-kube-app:)[^[:space:]]+|\1${GITHUB_SHA}|g" k8s/app-deployment.yaml
-          echo "Manifest after update:"
-          grep "image: ghcr.io/thomaschrtt/sample-kube-app" k8s/app-deployment.yaml
+          set -euo pipefail
+
+          MANIFEST="k8s/app-deployment.yaml"
+
+          if [ ! -f "$MANIFEST" ]; then
+            echo "::error::Fichier $MANIFEST introuvable dans le repo GitOps"
+            exit 1
+          fi
+
+          echo "Manifest avant mise à jour :"
+          grep -n "image: ghcr.io/thomaschrtt/sample-kube-app" "$MANIFEST" || true
+
+          sed -i -E "s|(ghcr\.io/thomaschrtt/sample-kube-app:)[^[:space:]\"']+|\1${GITHUB_SHA}|g" "$MANIFEST"
+
+          echo "Manifest après mise à jour :"
+          grep -n "image: ghcr.io/thomaschrtt/sample-kube-app" "$MANIFEST"
+
+          if ! grep -q "ghcr.io/thomaschrtt/sample-kube-app:${GITHUB_SHA}" "$MANIFEST"; then
+            echo "::error::Aucune substitution effectuée, vérifie le format du tag dans le manifeste"
+            exit 1
+          fi
 
       # Commit + push du changement GitOps
       - name: Commit and push GitOps changes
         working-directory: gitops
         run: |
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add k8s/app-deployment.yaml
 
-          git commit -m "Update app image to ${{ github.sha }}"
-          git push origin main
+          if git diff --cached --quiet; then
+            echo "Aucun changement à committer (image déjà à jour)"
+            exit 0
+          fi
+
+          git commit -m "Update app image to ${GITHUB_SHA}"
+
+          for i in 1 2 3; do
+            git pull --rebase origin "$(git rev-parse --abbrev-ref HEAD)" && git push && exit 0
+            echo "Push échoué (tentative $i), nouvelle tentative..."
+            sleep 5
+          done
+
+          echo "::error::Impossible de pousser les changements GitOps"
+          exit 1
