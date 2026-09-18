@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-app-config
+  namespace: sample-app
+data:
+  APP_NAME: "sample-kube-app"
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  APP_URL: "http://sample-app.local"
+  DB_CONNECTION: "mysql"
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  DB_DATABASE: "app_database"

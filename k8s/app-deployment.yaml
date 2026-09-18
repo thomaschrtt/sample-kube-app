@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-app
+  namespace: sample-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-app
+  template:
+    metadata:
+      labels:
+        app: sample-app
+    spec:
+      initContainers:
+        - name: migrate-database
+          image: ghcr.io/thomaschrtt/sample-kube-app:latest
+          imagePullPolicy: Always
+          command:
+            - sh
+            - -c
+            - |
+              until php artisan migrate --force --no-interaction; do
+                echo "Database not ready yet, retrying in 5s..."
+                sleep 5
+              done
+          envFrom:
+            - configMapRef:
+                name: sample-app-config
+            - secretRef:
+                name: sample-app-secret
+      containers:
+        - name: sample-app
+          image: ghcr.io/thomaschrtt/sample-kube-app:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: sample-app-config
+            - secretRef:
+                name: sample-app-secret
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 20
