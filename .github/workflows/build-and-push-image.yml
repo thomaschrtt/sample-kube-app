@@ -67,7 +67,7 @@ jobs:
       # Mettre à jour l'image dans Kubernetes
       - name: Update Kubernetes image
         run: |
-          sed -i -E "s|(ghcr.io/thomaschrtt/sample-kube-app:)[^[:space:]]+|\1${GITHUB_SHA}|g" gitops/k8s/app-deployment.yaml
+          sed -i -E "s|(ghcr.io/thomaschrtt/sample-kube-app:)[^[:space:]]+|\1${GITHUB_SHA}|g" k8s/app-deployment.yaml
 
       # Commit + push du changement GitOps
       - name: Commit and push GitOps changes
