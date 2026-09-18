@@ -20,7 +20,7 @@ spec:
     spec:
       initContainers:
         - name: migrate-database
-          image: ghcr.io/thomaschrtt/sample-kube-app:IMAGE_TAG
+          image: ghcr.io/thomaschrtt/sample-kube-app:1563621212d53dad5c7ae17e1e8e0eecf99e67d1
           imagePullPolicy: Always
 
           command:
@@ -40,7 +40,7 @@ spec:
 
       containers:
         - name: sample-app
-          image: ghcr.io/thomaschrtt/sample-kube-app:IMAGE_TAG
+          image: ghcr.io/thomaschrtt/sample-kube-app:1563621212d53dad5c7ae17e1e8e0eecf99e67d1
           imagePullPolicy: Always
 
           ports:
