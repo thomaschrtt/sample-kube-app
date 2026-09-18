@@ -20,6 +20,7 @@ on:
       - artisan
       - server.php
       - .github/workflows/build-and-push-image.yml
+
   workflow_dispatch:
 
 permissions:
@@ -31,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Récupérer le code
+      # Récupérer le code de l'application
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -47,22 +48,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Générer les tags Docker
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=sha
-            type=raw,value=${{ github.sha }}
-
-      # Build + Push de l'image
+      # Build + Push de l'image avec le SHA complet
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: . 
-          push: true 
+          context: .
+          push: true
           tags: ghcr.io/thomaschrtt/sample-kube-app:${{ github.sha }}
 
       # Récupérer le repository GitOps
